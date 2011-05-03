@@ -52,7 +52,7 @@ static VALUE js2rb(JSContextRef ctx, JSValueRef val) {
 	buf = malloc(max);
 	len = JSStringGetUTF8CString(str, buf, max);
 
-	output = rb_str_new(buf, len);
+	output = rb_str_new(buf, len-1); // Ignore terminator
 	free(buf);
 
 	JSStringRelease(str);
