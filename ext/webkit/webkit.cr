@@ -139,11 +139,12 @@ static void *javascript_add_ruby_fn(JSGlobalContextRef ctx, char *name, VALUE ru
 
 	fn = JS_fn(js_ruby_fn);
 
-	//printf("Hmm. Made: %p\n", fn);
-
 	if (!JSObjectSetPrivate(fn, (void*)ruby_fn)) {
+		gpointer old_value = g_hash_table_lookup(ruby_fns, (gpointer)fn);
+		if (old_value != NULL)
+			RUBYFUNC_DEL((VALUE)old_value);
+		RUBYFUNC_ADD(ruby_fn);
 		g_hash_table_insert(ruby_fns, (gpointer)fn, (gpointer)ruby_fn);
-		//printf("Fail to set fn!! :(\n");
 	}
 
 	SET_VALUE(global, name, fn);
@@ -207,7 +208,10 @@ VALUE javascript_exec(JSGlobalContextRef ctx, char *script)
 %include webkit/webkit.h
 %include JavaScriptCore/JavaScript.h
 
+
 module WebKit
+	gcpool RubyFunc
+
 	class JavascriptError < StandardError
 	end
 
