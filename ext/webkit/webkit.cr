@@ -203,6 +203,8 @@ VALUE javascript_exec(JSGlobalContextRef ctx, char *script)
 	return output;
 }
 
+#include <webkit/webkitenumtypes.h>
+
 %}
  
 %include webkit/webkit.h
@@ -294,7 +296,54 @@ module WebKit
 		end
 		def stop_loading
 			webkit_web_view_stop_loading(_self);
-		end
-	end
+    end
+
+    gobject TargetInfo <  WEBKIT_TYPE_WEB_VIEW_TARGET_INFO
+    end
+
+    gobject ViewMode<  WEBKIT_TYPE_WEB_VIEW_VIEW_MODE
+    end
+  end
+  
+  gobject DownloadStatus <  WEBKIT_TYPE_DOWNLOAD_STATUS
+  end
+
+  gobject DownloadError <  WEBKIT_TYPE_DOWNLOAD_ERROR
+  end
+
+  gobject NetworkError <  WEBKIT_TYPE_NETWORK_ERROR
+  end
+
+  gobject PolicyError <  WEBKIT_TYPE_POLICY_ERROR
+  end
+
+  gobject PluginError <  WEBKIT_TYPE_PLUGIN_ERROR
+  end
+
+  gobject CacheModel <  WEBKIT_TYPE_CACHE_MODEL
+  end
+
+  gobject HitTestResultContext <  WEBKIT_TYPE_HIT_TEST_RESULT_CONTEXT
+  end
+
+  gobject LoadStatus <  WEBKIT_TYPE_LOAD_STATUS
+  end
+
+  gobject NavigationReason <  WEBKIT_TYPE_WEB_NAVIGATION_REASON
+  end
+
+  gobject EditingBehavior <  WEBKIT_TYPE_EDITING_BEHAVIOR
+  end
+
+  gobject NavigationResponse <  WEBKIT_TYPE_NAVIGATION_RESPONSE
+  end
+
+  gobject SelectionAffinity <  WEBKIT_TYPE_SELECTION_AFFINITY
+  end
+
+  gobject InsertAction <  WEBKIT_TYPE_INSERT_ACTION
+  end
 end
+
+
 

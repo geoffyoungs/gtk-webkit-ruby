@@ -61,3 +61,18 @@
 
 --- WebKit::WebView#stop_loading
 
+=== class WebKit::WebView::TargetInfo
+=== class WebKit::WebView::ViewMode
+== class WebKit::DownloadStatus
+== class WebKit::DownloadError
+== class WebKit::NetworkError
+== class WebKit::PolicyError
+== class WebKit::PluginError
+== class WebKit::CacheModel
+== class WebKit::HitTestResultContext
+== class WebKit::LoadStatus
+== class WebKit::NavigationReason
+== class WebKit::EditingBehavior
+== class WebKit::NavigationResponse
+== class WebKit::SelectionAffinity
+== class WebKit::InsertAction
