@@ -16,7 +16,7 @@
 --- WebKit::WebFrame#exec_js(String js)
 
 
---- WebKit::WebFrame#setup_ruby
+--- WebKit::WebFrame#add_ruby_eval
 
 --- WebKit::WebFrame#add_js_api(String name, block)
 
@@ -60,4 +60,30 @@
 
 
 --- WebKit::WebView#stop_loading
+
+== class WebKit::WebResource
+--- WebKit::WebResource#encoding
+
+--- WebKit::WebResource#frame_name
+
+--- WebKit::WebResource#mime_type
+
+--- WebKit::WebResource#uri
+
+--- WebKit::WebResource#data
+
+--- WebKit::WebResource#data=(String data)
+
+
+== class WebKit::WebNetworkRequest
+--- WebKit::WebNetworkRequest#uri
+
+--- WebKit::WebNetworkRequest#uri=(String uri)
+
+
+== class WebKit::WebNetworkResponse
+--- WebKit::WebNetworkResponse#uri
+
+--- WebKit::WebNetworkResponse#uri=(String uri)
+
 

@@ -2,23 +2,28 @@ require 'rubygems'
 gem 'rake-compiler'
 require 'rake/extensiontask'
 BASE_DIR = Dir.pwd
-require 'rake/gempackagetask'
+require 'rubygems/package_task'
+require 'rake/testtask'
 
 exts = []
 
+namespace :prepare do
 FileList["ext/*/*.cr"].each do |cr|
 	dir = File.dirname(cr)
-	task(dir+"/extconf.rb") do
+	name = File.basename(dir)
+	desc "Generate source for #{name}"
+	task(name.intern) do
 		sh 'rubber-generate', '--build-dir', dir, cr
 	end
+end
 end
 
 spec = Gem::Specification.new do |s|
 	s.name = "gtk-webkit-ruby"
 	s.author = "Geoff Youngs"
 	s.email = "git@intersect-uk.co.uk"
-	s.version = "0.0.2"
-	s.homepage = "http://github.com/geoffyoungs/gtk-webkit-ruby"	
+	s.version = "0.0.3"
+	s.homepage = "http://github.com/geoffyoungs/gtk-webkit-ruby"
 	s.summary = "Webkit bindings using rubber-generate"
 	s.add_dependency("rubber-generate", ">= 0.0.12")
 	s.platform = Gem::Platform::RUBY
@@ -40,16 +45,14 @@ puts v.main_frame.exec_js("ruby_eval('RUBY_DESCRIPTION')")
 puts v.main_frame.exec_js("document.root.innerHTML")
 EOF
 end
-Rake::GemPackageTask.new(spec) do |pkg|
+Gem::PackageTask.new(spec) do |pkg|
     pkg.need_tar = true
 end
-Rake::ExtensionTask.new("webkit")
+Rake::ExtensionTask.new("webkit", spec)
 
-namespace :gem do
+Rake::TestTask.new do |t|
+	t.test_files = FileList['test/*_test.rb']
 end
-
-task :prepare, exts
-task :build_gem, ['prepare', 'package']
 
 task :default, :compile
 

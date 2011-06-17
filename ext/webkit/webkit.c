@@ -45,7 +45,7 @@ static VALUE cWebFrame;
 static VALUE
 WebFrame_exec_js(VALUE self, VALUE __v_js);
 static VALUE
-WebFrame_setup_ruby(VALUE self);
+WebFrame_add_ruby_eval(VALUE self);
 static VALUE
 WebFrame_add_js_api(VALUE self, VALUE __v_name);
 static VALUE
@@ -81,6 +81,29 @@ static VALUE
 WebView_set_custom_encoding(VALUE self, VALUE __v_encoding);
 static VALUE
 WebView_stop_loading(VALUE self);
+static VALUE cWebResource;
+static VALUE
+WebResource_encoding(VALUE self);
+static VALUE
+WebResource_frame_name(VALUE self);
+static VALUE
+WebResource_mime_type(VALUE self);
+static VALUE
+WebResource_uri(VALUE self);
+static VALUE
+WebResource_data(VALUE self);
+static VALUE
+WebResource_data_equals(VALUE self, VALUE data);
+static VALUE cWebNetworkRequest;
+static VALUE
+WebNetworkRequest_uri(VALUE self);
+static VALUE
+WebNetworkRequest_uri_equals(VALUE self, VALUE __v_uri);
+static VALUE cWebNetworkResponse;
+static VALUE
+WebNetworkResponse_uri(VALUE self);
+static VALUE
+WebNetworkResponse_uri_equals(VALUE self, VALUE __v_uri);
 static VALUE _gcpool_RubyFunc = Qnil;
 static void __gcpool_RubyFunc_add(VALUE val);
 static void __gcpool_RubyFunc_del(VALUE val);
@@ -91,205 +114,14 @@ static void __gcpool_RubyFunc_del(VALUE val);
 
 #include <intern.h>
 
-#define STRINGIZE(s) #s
+#include "javascript.h"
 
-#define JS_fn(f) _JS_fn(ctx, STRINGIZE(f), f)
-JSObjectRef _JS_fn(JSContextRef ctx, const char *name, JSObjectCallAsFunctionCallback f)
-{
-    JSStringRef nameStr = JSStringCreateWithUTF8CString(name);
-    JSObjectRef value = JSObjectMakeFunctionWithCallback(ctx, nameStr, f);
-    JSStringRelease(nameStr);
-    return value;
-}
-
-#define SET_VALUE(object, name, value) \
-    {JSStringRef nameStr = JSStringCreateWithUTF8CString(name); \
-    JSObjectSetProperty(ctx, object, nameStr, value, kJSPropertyAttributeNone, _exception); \
-    JSStringRelease(nameStr); \
-    if (*_exception) { return NULL; }}
-
-static char *js2utf8(JSContextRef ctx, JSValueRef val, size_t* out_len) {
-	JSStringRef str = JSValueToStringCopy(ctx, val, NULL);
-	size_t max = 0, len;
-	char *buf;
-
-	max = JSStringGetMaximumUTF8CStringSize(str);
-	buf = malloc(max);
-	len = JSStringGetUTF8CString(str, buf, max);
-
-	if (out_len) {
-		*out_len = len;
-	}
-
-	JSStringRelease(str);
-
-	return buf;
-}
-
-static VALUE js2rb(JSContextRef ctx, JSValueRef val) {
-	VALUE output = Qnil;
-	JSStringRef str = JSValueToStringCopy(ctx, val, NULL);
-
-	size_t len = 0;
-	size_t max = 0;
-	char *buf;
-
-	max = JSStringGetMaximumUTF8CStringSize(str);
-	buf = malloc(max);
-	len = JSStringGetUTF8CString(str, buf, max);
-
-	output = rb_str_new(buf, len-1); // Ignore terminator
-	free(buf);
-
-	JSStringRelease(str);
-	return output;
-}
-
-static JSValueRef str2jsval(JSContextRef ctx, char *str) {
-	JSStringRef js_s_ref  = JSStringCreateWithUTF8CString(str);
-	JSValueRef js_val_ref = JSValueMakeString(ctx, js_s_ref);
-	JSStringRelease(js_s_ref);
-	return js_val_ref;
-}
-
-static JSValueRef rb2js(JSContextRef ctx, VALUE val) {
-	
-	if (TYPE(val) != T_STRING) {
-		val = rb_funcall(val, rb_intern("to_s"), 0);
-	}
-
-	{
-		JSStringRef js_s_ref  = JSStringCreateWithUTF8CString(RSTRING_PTR(val));
-		JSValueRef js_val_ref = JSValueMakeString(ctx, js_s_ref);
-		JSStringRelease(js_s_ref);
-		return js_val_ref;
-	}
-}
-
-static JSValueRef evaluate_ruby (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, 
-		size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-	JSValueRef value = NULL;
-
-	if (argumentCount == 1) {
-		char *script = js2utf8(ctx, arguments[0], NULL);
-		VALUE val    = rb_eval_string(script);
-
-		value = rb2js(ctx, val);
-
-		free(script);
+static inline VALUE strOrNil(const char *str) {
+	if (str) {
+		return rb_str_new2(str);
 	} else {
-		*exception = str2jsval(ctx, "Wrong number of arguments");
+		return Qnil;
 	}
-
-	return value;
-}
-
-static GHashTable *ruby_fns = NULL;
-
-static JSValueRef js_ruby_fn(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, 
-				size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-	size_t i;
-	VALUE *args = ALLOC_N(VALUE, argumentCount);
-	VALUE ruby_fn = (VALUE) JSObjectGetPrivate(function);
-	JSValueRef retval;
-
-	if ((!ruby_fn) && ruby_fns) {
-		ruby_fn = (VALUE)g_hash_table_lookup(ruby_fns, (gpointer)function);
-	}
-	
-	//printf("Hmm.  Found: %p\n", function);
-
-	for (i = 0; i < argumentCount; i++) {
-		args[i] = js2rb(ctx, arguments[i]);
-	}
-
-	retval = rb2js(ctx, rb_funcall2(ruby_fn, rb_intern("call"), argumentCount, args));
-
-	free(args);
-
-	return retval;
-}
-
-static void *javascript_add_ruby_fn(JSGlobalContextRef ctx, char *name, VALUE ruby_fn)
-{
-	JSValueRef *_exception = NULL;
-	JSObjectRef fn = NULL;
-	
-	if (!ruby_fns) {
-		ruby_fns = g_hash_table_new(NULL, NULL);
-	}
-
-	JSObjectRef global = JSContextGetGlobalObject(ctx);
-
-	fn = JS_fn(js_ruby_fn);
-
-	//printf("Hmm. Made: %p\n", fn);
-
-	if (!JSObjectSetPrivate(fn, (void*)ruby_fn)) {
-		gpointer old_value = g_hash_table_lookup(ruby_fns, (gpointer)fn);
-		if (old_value != NULL)
-			RUBYFUNC_DEL((VALUE)old_value);
-		RUBYFUNC_ADD(ruby_fn);
-		g_hash_table_insert(ruby_fns, (gpointer)fn, (gpointer)ruby_fn);
-		//printf("Fail to set fn!! :(\n");
-	}
-
-	SET_VALUE(global, name, fn);
-
-	return NULL;
-}
-
-static void *javascript_setup_ruby(JSGlobalContextRef ctx)
-{
-	JSValueRef *_exception = NULL;
-
-	JSObjectRef global = JSContextGetGlobalObject(ctx);
-
-	SET_VALUE(global, "ruby_eval", JS_fn(evaluate_ruby));
-
-	return NULL;
-}
-
-VALUE javascript_exec(JSGlobalContextRef ctx, char *script) 
-{
-	VALUE output = Qnil;
-
-	JSStringRef js_script = JSStringCreateWithUTF8CString(script);
-
-	JSStringRef url = JSStringCreateWithUTF8CString("ruby:string");
-	JSValueRef err = JSValueMakeUndefined(ctx);
-	JSValueRef retval = NULL;
-
-	/* Execute script */
-	//printf("Executing: `%s'\n", script);
-	
-	retval = JSEvaluateScript(ctx, js_script, NULL, url, 0, &err);
-	//printf("Retval: %p, err %p\n", retval, err);
-
-	JSStringRelease(url);
-	JSStringRelease(js_script);
-
-	/* Convert output to string */
-	if (retval) {
-		output = js2rb(ctx, retval);
-	} else {
-		JSStringRef str = JSValueToStringCopy(ctx, err, NULL);
-		size_t len = 0;
-		size_t max = 0;
-		char *buf;
-
-		max = JSStringGetMaximumUTF8CStringSize(str);
-		buf = malloc(max);
-		len = JSStringGetUTF8CString(str, buf, max);
-		fprintf(stderr, "Exception: %s\n", buf);
-		JSStringRelease(str);
-		rb_raise(cJavascriptError, buf);
-		free(buf);
-	}
-
-	return output;
 }
 
 
@@ -300,7 +132,7 @@ WebKit_CLASS_set_web_database_path(VALUE self, VALUE __v_path)
   char * path; char * __orig_path;
   __orig_path = path = ( NIL_P(__v_path) ? NULL : StringValuePtr(__v_path) );
 
-#line 221 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 31 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_set_web_database_directory_path(path);
  
   return self;
@@ -310,7 +142,7 @@ static VALUE
 WebKit_CLASS_remove_all_web_databases(VALUE self)
 {
 
-#line 224 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 34 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_remove_all_web_databases();
  
   return Qnil;
@@ -322,7 +154,7 @@ WebKit_CLASS_set_default_web_database_quota(VALUE self, VALUE __v_quota)
   guint64 quota; guint64 __orig_quota;
   __orig_quota = quota = rb_num2ull(__v_quota);
 
-#line 227 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 37 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_set_default_web_database_quota(quota);
  
   return self;
@@ -332,7 +164,7 @@ static VALUE
 WebSettings_initialize(VALUE self)
 {
 
-#line 233 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 43 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   G_INITIALIZE(self, webkit_web_settings_new());
  
   return Qnil;
@@ -346,19 +178,19 @@ WebFrame_exec_js(VALUE self, VALUE __v_js)
   WebKitWebFrame *_self = ((WebKitWebFrame*)RVAL2GOBJ(self));
   __orig_js = js = ( NIL_P(__v_js) ? NULL : StringValuePtr(__v_js) );
 
-#line 239 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 50 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = javascript_exec(webkit_web_frame_get_global_context(_self), js); goto out; } while(0);
 out:
   return __p_retval;
 }
 
 static VALUE
-WebFrame_setup_ruby(VALUE self)
+WebFrame_add_ruby_eval(VALUE self)
 {
   WebKitWebFrame *_self = ((WebKitWebFrame*)RVAL2GOBJ(self));
 
-#line 242 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  javascript_setup_ruby(webkit_web_frame_get_global_context(_self));
+#line 53 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  javascript_add_ruby_eval(webkit_web_frame_get_global_context(_self));
  
   return Qnil;
 }
@@ -371,7 +203,7 @@ WebFrame_add_js_api(VALUE self, VALUE __v_name)
   __orig_name = name = ( NIL_P(__v_name) ? NULL : StringValuePtr(__v_name) );
   VALUE block = rb_block_proc();
 
-#line 245 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 56 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   javascript_add_ruby_fn(webkit_web_frame_get_global_context(_self), name, block);
  
   return Qnil;
@@ -390,7 +222,7 @@ WebFrame_load_string(VALUE self, VALUE __v_content, VALUE __v_mime_type, VALUE _
   __orig_encoding = encoding = ( NIL_P(__v_encoding) ? NULL : StringValuePtr(__v_encoding) );
   __orig_base_uri = base_uri = ( NIL_P(__v_base_uri) ? NULL : StringValuePtr(__v_base_uri) );
 
-#line 248 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 59 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_frame_load_string(_self, content, mime_type, encoding, base_uri);
  
   return Qnil;
@@ -400,7 +232,7 @@ static VALUE
 WebView_initialize(VALUE self)
 {
 
-#line 254 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 65 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   RBGTK_INITIALIZE(self, webkit_web_view_new());
  
   return Qnil;
@@ -413,7 +245,7 @@ WebView_open(VALUE self, VALUE __v_uri)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
   __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
 
-#line 257 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 68 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_open(_self, uri);
  
   return Qnil;
@@ -426,7 +258,7 @@ WebView_execute_script(VALUE self, VALUE __v_script)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
   __orig_script = script = ( NIL_P(__v_script) ? NULL : StringValuePtr(__v_script) );
 
-#line 260 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 71 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_execute_script(_self, script);
  
   return Qnil;
@@ -439,7 +271,7 @@ WebView_set_settings(VALUE self, VALUE __v_settings)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
   __orig_settings = settings = RVAL2GOBJ(__v_settings);
 
-#line 263 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 74 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_set_settings(_self, settings);
  
   return self;
@@ -458,7 +290,7 @@ WebView_load_string(VALUE self, VALUE __v_content, VALUE __v_mime_type, VALUE __
   __orig_encoding = encoding = ( NIL_P(__v_encoding) ? NULL : StringValuePtr(__v_encoding) );
   __orig_base_uri = base_uri = ( NIL_P(__v_base_uri) ? NULL : StringValuePtr(__v_base_uri) );
 
-#line 266 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 77 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_load_string(_self, content, mime_type, encoding, base_uri);
  
   return Qnil;
@@ -471,7 +303,7 @@ WebView_load_uri(VALUE self, VALUE __v_uri)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
   __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
 
-#line 269 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 80 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_load_uri(_self, uri);
  
   return Qnil;
@@ -483,7 +315,7 @@ WebView_main_frame(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 272 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 83 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = GOBJ2RVAL(webkit_web_view_get_main_frame(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -495,7 +327,7 @@ WebView_focused_frame(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 275 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 86 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = GOBJ2RVAL(webkit_web_view_get_focused_frame(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -507,7 +339,7 @@ WebView_progress(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 280 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 89 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_float_new(webkit_web_view_get_progress(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -519,7 +351,7 @@ WebView_title(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 283 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 92 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_web_view_get_title(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -531,7 +363,7 @@ WebView_uri(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 286 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 95 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_web_view_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -542,7 +374,7 @@ WebView_reload(VALUE self)
 {
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 289 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 98 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_reload(_self);
  
   return Qnil;
@@ -553,7 +385,7 @@ WebView_reload_bypass_cache(VALUE self)
 {
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 292 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 101 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_reload_bypass_cache(_self);
  
   return Qnil;
@@ -566,7 +398,7 @@ WebView_set_custom_encoding(VALUE self, VALUE __v_encoding)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
   __orig_encoding = encoding = ( NIL_P(__v_encoding) ? NULL : StringValuePtr(__v_encoding) );
 
-#line 295 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 104 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_set_custom_encoding(_self, encoding);
  
   return self;
@@ -577,10 +409,151 @@ WebView_stop_loading(VALUE self)
 {
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
-#line 298 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 107 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_web_view_stop_loading(_self);
  
   return Qnil;
+}
+
+static VALUE
+WebResource_encoding(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+
+#line 114 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = strOrNil(webkit_web_resource_get_encoding(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebResource_frame_name(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+
+#line 117 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = strOrNil(webkit_web_resource_get_frame_name(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebResource_mime_type(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+
+#line 120 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = strOrNil(webkit_web_resource_get_mime_type(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebResource_uri(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+
+#line 123 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = strOrNil(webkit_web_resource_get_mime_type(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebResource_data(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+
+#line 126 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+
+  do {
+  GString * data  =
+ webkit_web_resource_get_data(_self);
+  do { __p_retval = rb_str_new(data->str, data->len); goto out; } while(0);
+
+  } while(0);
+
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebResource_data_equals(VALUE self, VALUE data)
+{
+  VALUE __p_retval = data;
+  WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
+  Check_Type(data, T_STRING);
+
+#line 130 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+
+  do {
+  GString * odata  =
+ webkit_web_resource_get_data(_self);
+  g_free(odata->str);
+  odata->str = g_malloc(RSTRING_LEN(data)+1);
+  odata->len = odata->allocated_len = RSTRING_LEN(data);
+  memcpy(RSTRING_PTR(data), odata->str, RSTRING_LEN(data));
+  do { __p_retval = data; goto out; } while(0);
+
+  } while(0);
+
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebNetworkRequest_uri(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
+
+#line 142 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval =  rb_str_new2(webkit_network_request_get_uri(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebNetworkRequest_uri_equals(VALUE self, VALUE __v_uri)
+{
+  char * uri; char * __orig_uri;
+  WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
+  __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
+
+#line 145 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  webkit_network_request_set_uri(_self, uri);
+ 
+  return __v_uri;
+}
+
+static VALUE
+WebNetworkResponse_uri(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
+
+#line 152 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval =  rb_str_new2(webkit_network_response_get_uri(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebNetworkResponse_uri_equals(VALUE self, VALUE __v_uri)
+{
+  char * uri; char * __orig_uri;
+  WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
+  __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
+
+#line 155 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  webkit_network_response_set_uri(_self, uri);
+ 
+  return __v_uri;
 }
 
 static void __gcpool_RubyFunc_add(VALUE val)
@@ -621,7 +594,7 @@ Init_webkit(void)
   rb_define_method(cWebSettings, "initialize", WebSettings_initialize, 0);
   cWebFrame = G_DEF_CLASS(WEBKIT_TYPE_WEB_FRAME, "WebFrame", mWebKit);
   rb_define_method(cWebFrame, "exec_js", WebFrame_exec_js, 1);
-  rb_define_method(cWebFrame, "setup_ruby", WebFrame_setup_ruby, 0);
+  rb_define_method(cWebFrame, "add_ruby_eval", WebFrame_add_ruby_eval, 0);
   rb_define_method(cWebFrame, "add_js_api", WebFrame_add_js_api, 1);
   rb_define_method(cWebFrame, "load_string", WebFrame_load_string, 4);
   cWebView = G_DEF_CLASS(WEBKIT_TYPE_WEB_VIEW, "WebView", mWebKit);
@@ -640,5 +613,18 @@ Init_webkit(void)
   rb_define_method(cWebView, "reload_bypass_cache", WebView_reload_bypass_cache, 0);
   rb_define_method(cWebView, "set_custom_encoding", WebView_set_custom_encoding, 1);
   rb_define_method(cWebView, "stop_loading", WebView_stop_loading, 0);
+  cWebResource = G_DEF_CLASS(WEBKIT_TYPE_WEB_RESOURCE, "WebResource", mWebKit);
+  rb_define_method(cWebResource, "encoding", WebResource_encoding, 0);
+  rb_define_method(cWebResource, "frame_name", WebResource_frame_name, 0);
+  rb_define_method(cWebResource, "mime_type", WebResource_mime_type, 0);
+  rb_define_method(cWebResource, "uri", WebResource_uri, 0);
+  rb_define_method(cWebResource, "data", WebResource_data, 0);
+  rb_define_method(cWebResource, "data=", WebResource_data_equals, 1);
+  cWebNetworkRequest = G_DEF_CLASS(WEBKIT_TYPE_NETWORK_REQUEST, "WebNetworkRequest", mWebKit);
+  rb_define_method(cWebNetworkRequest, "uri", WebNetworkRequest_uri, 0);
+  rb_define_method(cWebNetworkRequest, "uri=", WebNetworkRequest_uri_equals, 1);
+  cWebNetworkResponse = G_DEF_CLASS(WEBKIT_TYPE_NETWORK_RESPONSE, "WebNetworkResponse", mWebKit);
+  rb_define_method(cWebNetworkResponse, "uri", WebNetworkResponse_uri, 0);
+  rb_define_method(cWebNetworkResponse, "uri=", WebNetworkResponse_uri_equals, 1);
 rb_gc_register_address(&_gcpool_RubyFunc);
 }
