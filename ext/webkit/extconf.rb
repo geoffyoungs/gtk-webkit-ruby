@@ -3,6 +3,7 @@ require 'mkmf-gnome2'
 PKGConfig.have_package("gtk+-2.0") or exit(-1)
 PKGConfig.have_package("webkit-1.0") or exit(-1)
 have_header("webkit/webkit.h") or exit(-1)
+have_header("webkit/webkitenumtypes.h") or exit(-1)
 have_header("JavaScriptCore/JavaScript.h") or exit(-1)
 
 STDOUT.print("checking for new allocation framework... ") # for ruby-1.7

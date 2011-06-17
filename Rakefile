@@ -28,9 +28,9 @@ spec = Gem::Specification.new do |s|
 	s.add_dependency("rubber-generate", ">= 0.0.12")
 	s.platform = Gem::Platform::RUBY
 	s.extensions = FileList["ext/*/extconf.rb"]
-	s.files = Dir['ext/*/*.{c,cr,rd}']
+	s.files = FileList['ext/*/*.{c,h,cr,rd}'] + ['Rakefile', 'README.md']
 s.description = <<-EOF
-Gtk Webkit bindings for ruby.  Partial coverage sufficient to embed a webview in a ruby-gnome2 application.
+Gtk Webkit bindings for ruby.  Partial coverage sufficient to embed a webview in a Ruby-GNOME2 application.
 
 Also initial/experimental support for allowing ruby code to be called by javascript & executing javascript
 from ruby.

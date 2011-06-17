@@ -87,3 +87,33 @@
 --- WebKit::WebNetworkResponse#uri=(String uri)
 
 
+== class WebKit::Download
+--- WebKit::Download.new(WebKitNetworkRequest* request)
+
+
+--- WebKit::Download#start
+
+--- WebKit::Download#cancel
+
+--- WebKit::Download#progress
+
+--- WebKit::Download#current_size
+
+--- WebKit::Download#total_size
+
+--- WebKit::Download#uri
+
+--- WebKit::Download#suggested_filename
+
+== enum WebKit::TargetInfo
+== enum WebKit::DownloadStatus
+== enum WebKit::DownloadError
+== enum WebKit::NetworkError
+== enum WebKit::PolicyError
+== enum WebKit::PluginError
+== enum WebKit::CacheModel
+== enum WebKit::LoadStatus
+== enum WebKit::NavigationReason
+== enum WebKit::HitTestResultContext
+== enum WebKit::EditingBehavior
+== enum WebKit::NavigationResponse

@@ -16,8 +16,9 @@ static inline VALUE strOrNil(const char *str) {
 }
 
 %}
- 
+
 %include webkit/webkit.h
+%include webkit/webkitenumtypes.h
 %include JavaScriptCore/JavaScript.h
 
 %map strOrNil > VALUE : strOrNil(%%)
@@ -62,6 +63,7 @@ module WebKit
 	end
 	gobject WebView < WEBKIT_TYPE_WEB_VIEW
 		@type WebKitWebView
+
 		def initialize()
 			RBGTK_INITIALIZE(self, webkit_web_view_new());
 		end
@@ -155,6 +157,54 @@ module WebKit
 		def uri=(char *uri)
 			webkit_network_response_set_uri(_self, uri);
 		end
+ 	end
+  
+	gobject Download < WEBKIT_TYPE_DOWNLOAD
+		@type WebKitDownload
+		def initialize(WebKitNetworkRequest *request)
+			RBGTK_INITIALIZE(self, webkit_download_new(request));
+		end
+		def start
+			webkit_download_start(_self);
+		end
+		def cancel
+			webkit_download_cancel(_self);
+		end
+		def double:progress
+			return webkit_download_get_progress(_self);
+		end
+		def guint64:current_size
+			return webkit_download_get_current_size(_self);
+		end
+		def guint64:total_size
+			return webkit_download_get_total_size(_self);
+		end
+		def char*:uri
+			return webkit_download_get_uri(_self);
+		end
+		def char*:suggested_filename
+			return webkit_download_get_suggested_filename(_self);
+		end
 	end
+
+  genum TargetInfo           WEBKIT_TYPE_WEB_VIEW_TARGET_INFO    WEBKIT_;
+
+  genum DownloadStatus       WEBKIT_TYPE_DOWNLOAD_STATUS         WEBKIT_;
+  genum DownloadError        WEBKIT_TYPE_DOWNLOAD_ERROR          WEBKIT_;
+  genum NetworkError         WEBKIT_TYPE_NETWORK_ERROR           WEBKIT_;
+  genum PolicyError          WEBKIT_TYPE_POLICY_ERROR            WEBKIT_;
+  genum PluginError          WEBKIT_TYPE_PLUGIN_ERROR            WEBKIT_;
+
+  genum CacheModel           WEBKIT_TYPE_CACHE_MODEL             WEBKIT_;
+  genum LoadStatus           WEBKIT_TYPE_LOAD_STATUS             WEBKIT_;
+
+  genum NavigationReason     WEBKIT_TYPE_WEB_NAVIGATION_REASON   WEBKIT_;
+  genum HitTestResultContext WEBKIT_TYPE_HIT_TEST_RESULT_CONTEXT WEBKIT_;
+  genum EditingBehavior      WEBKIT_TYPE_EDITING_BEHAVIOR        WEBKIT_;
+  genum NavigationResponse   WEBKIT_TYPE_NAVIGATION_RESPONSE     WEBKIT_;
+
+  # genum ViewMode             WEBKIT_TYPE_WEB_VIEW_VIEW_MODE  WEBKIT_;
+  # genum SelectionAffinity    WEBKIT_TYPE_SELECTION_AFFINITY  WEBKIT_;
+  # genum InsertAction         WEBKIT_TYPE_INSERT_ACTION       WEBKIT_;
 end
 
