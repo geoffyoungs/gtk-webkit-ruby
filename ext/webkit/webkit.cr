@@ -23,6 +23,8 @@ static inline VALUE strOrNil(const char *str) {
 
 %map strOrNil > VALUE : strOrNil(%%)
 
+%map SoupMessage* > VALUE : GOBJ2RVAL(SOUP_MESSAGE(%%))
+
 module WebKit
 	gcpool RubyFunc
 
@@ -43,6 +45,19 @@ module WebKit
 		@type WebKitWebSettings
 		def initialize()
 			G_INITIALIZE(self, webkit_web_settings_new());
+		end
+	end
+
+	gobject WebPolicyDecision < WEBKIT_TYPE_WEB_POLICY_DECISION
+		@type WebKitWebPolicyDecision
+		def download
+			webkit_web_policy_decision_download(_self);
+		end
+		def use
+			webkit_web_policy_decision_use(_self);
+		end
+		def ignore
+			webkit_web_policy_decision_ignore(_self);
 		end
 	end
 
@@ -147,6 +162,9 @@ module WebKit
 		def uri=(char *uri)
 			webkit_network_request_set_uri(_self, uri);
 		end
+		def SoupMessage*:message
+			return webkit_network_request_get_message(_self);
+		end
 	end
 
 	gobject WebNetworkResponse < WEBKIT_TYPE_NETWORK_RESPONSE
@@ -156,6 +174,9 @@ module WebKit
 		end
 		def uri=(char *uri)
 			webkit_network_response_set_uri(_self, uri);
+		end
+		def SoupMessage*:message
+			return webkit_network_response_get_message(_self);
 		end
  	end
   

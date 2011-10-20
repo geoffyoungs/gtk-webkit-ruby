@@ -12,6 +12,13 @@
 == class WebKit::WebSettings
 --- WebKit::WebSettings.new
 
+== class WebKit::WebPolicyDecision
+--- WebKit::WebPolicyDecision#download
+
+--- WebKit::WebPolicyDecision#use
+
+--- WebKit::WebPolicyDecision#ignore
+
 == class WebKit::WebFrame
 --- WebKit::WebFrame#exec_js(String js)
 
@@ -81,11 +88,15 @@
 --- WebKit::WebNetworkRequest#uri=(String uri)
 
 
+--- WebKit::WebNetworkRequest#message
+
 == class WebKit::WebNetworkResponse
 --- WebKit::WebNetworkResponse#uri
 
 --- WebKit::WebNetworkResponse#uri=(String uri)
 
+
+--- WebKit::WebNetworkResponse#message
 
 == class WebKit::Download
 --- WebKit::Download.new(WebKitNetworkRequest* request)

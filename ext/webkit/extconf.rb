@@ -1,5 +1,19 @@
 require 'mkmf'
-require 'mkmf-gnome2'
+
+begin
+  require 'mkmf-gnome2'
+rescue LoadError
+  require 'rubygems'
+  gem 'glib2'
+  require 'mkmf-gnome2'
+  %w[rbglib.h rbgtk.h rbpango.h rbatk.h].each do |header|
+  	Gem.find_files(header).each do |f|
+		$CFLAGS += " '-I#{File.dirname(f)}'"
+	end
+  end
+end
+
+have_func("rb_errinfo")
 PKGConfig.have_package("gtk+-2.0") or exit(-1)
 PKGConfig.have_package("webkit-1.0") or exit(-1)
 have_header("webkit/webkit.h") or exit(-1)
