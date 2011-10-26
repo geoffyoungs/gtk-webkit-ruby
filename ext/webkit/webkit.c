@@ -90,6 +90,21 @@ static VALUE
 WebView_set_custom_encoding(VALUE self, VALUE __v_encoding);
 static VALUE
 WebView_stop_loading(VALUE self);
+static VALUE
+WebView_has_selection_query(VALUE self);
+static VALUE
+WebView_inspector(VALUE self);
+static VALUE cWebInspector;
+static VALUE
+WebInspector_inspect_coordinates(VALUE self, VALUE __v_x, VALUE __v_y);
+static VALUE
+WebInspector_uri(VALUE self);
+static VALUE
+WebInspector_show(VALUE self);
+static VALUE
+WebInspector_close(VALUE self);
+static VALUE
+WebInspector_view(VALUE self);
 static VALUE cWebResource;
 static VALUE
 WebResource_encoding(VALUE self);
@@ -491,12 +506,97 @@ WebView_stop_loading(VALUE self)
 }
 
 static VALUE
+WebView_has_selection_query(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
+
+#line 127 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval =  ((webkit_web_view_has_selection(_self)) ? Qtrue : Qfalse); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebView_inspector(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
+
+#line 130 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = GOBJ2RVAL(webkit_web_view_get_inspector(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebInspector_inspect_coordinates(VALUE self, VALUE __v_x, VALUE __v_y)
+{
+  double x; double __orig_x;
+  double y; double __orig_y;
+  WebKitWebInspector *_self = ((WebKitWebInspector*)RVAL2GOBJ(self));
+  __orig_x = x = NUM2DBL(__v_x);
+  __orig_y = y = NUM2DBL(__v_y);
+
+#line 137 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  webkit_web_inspector_inspect_coordinates(_self, x, y);
+ 
+  return Qnil;
+}
+
+static VALUE
+WebInspector_uri(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebInspector *_self = ((WebKitWebInspector*)RVAL2GOBJ(self));
+
+#line 140 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = strOrNil(webkit_web_inspector_get_inspected_uri(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
+WebInspector_show(VALUE self)
+{
+  WebKitWebInspector *_self = ((WebKitWebInspector*)RVAL2GOBJ(self));
+
+#line 143 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  webkit_web_inspector_show(_self);
+ 
+  return Qnil;
+}
+
+static VALUE
+WebInspector_close(VALUE self)
+{
+  WebKitWebInspector *_self = ((WebKitWebInspector*)RVAL2GOBJ(self));
+
+#line 146 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  webkit_web_inspector_close(_self);
+ 
+  return Qnil;
+}
+
+static VALUE
+WebInspector_view(VALUE self)
+{
+  VALUE __p_retval = Qnil;
+  WebKitWebInspector *_self = ((WebKitWebInspector*)RVAL2GOBJ(self));
+
+#line 149 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+  do { __p_retval = GOBJ2RVAL(webkit_web_inspector_get_web_view(_self)); goto out; } while(0);
+out:
+  return __p_retval;
+}
+
+static VALUE
 WebResource_encoding(VALUE self)
 {
   VALUE __p_retval = Qnil;
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
-#line 131 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 156 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = strOrNil(webkit_web_resource_get_encoding(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -508,7 +608,7 @@ WebResource_frame_name(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
-#line 134 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 159 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = strOrNil(webkit_web_resource_get_frame_name(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -520,7 +620,7 @@ WebResource_mime_type(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
-#line 137 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 162 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = strOrNil(webkit_web_resource_get_mime_type(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -532,7 +632,7 @@ WebResource_uri(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
-#line 140 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 165 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = strOrNil(webkit_web_resource_get_mime_type(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -544,7 +644,7 @@ WebResource_data(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
-#line 143 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 168 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
 
   do {
   GString * data  =
@@ -564,7 +664,7 @@ WebResource_data_equals(VALUE self, VALUE data)
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
   Check_Type(data, T_STRING);
 
-#line 147 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 172 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
 
   do {
   GString * odata  =
@@ -587,7 +687,7 @@ WebNetworkRequest_uri(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
 
-#line 159 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 184 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_network_request_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -600,7 +700,7 @@ WebNetworkRequest_uri_equals(VALUE self, VALUE __v_uri)
   WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
   __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
 
-#line 162 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 187 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_network_request_set_uri(_self, uri);
  
   return __v_uri;
@@ -612,7 +712,7 @@ WebNetworkRequest_message(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
 
-#line 165 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 190 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = GOBJ2RVAL(SOUP_MESSAGE(webkit_network_request_get_message(_self))); goto out; } while(0);
 out:
   return __p_retval;
@@ -624,7 +724,7 @@ WebNetworkResponse_uri(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
 
-#line 172 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 197 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_network_response_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -637,7 +737,7 @@ WebNetworkResponse_uri_equals(VALUE self, VALUE __v_uri)
   WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
   __orig_uri = uri = ( NIL_P(__v_uri) ? NULL : StringValuePtr(__v_uri) );
 
-#line 175 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 200 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_network_response_set_uri(_self, uri);
  
   return __v_uri;
@@ -649,7 +749,7 @@ WebNetworkResponse_message(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
 
-#line 178 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 203 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval = GOBJ2RVAL(SOUP_MESSAGE(webkit_network_response_get_message(_self))); goto out; } while(0);
 out:
   return __p_retval;
@@ -661,7 +761,7 @@ Download_initialize(VALUE self, VALUE __v_request)
   WebKitNetworkRequest * request; WebKitNetworkRequest * __orig_request;
   __orig_request = request = RVAL2GOBJ(__v_request);
 
-#line 185 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 210 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   RBGTK_INITIALIZE(self, webkit_download_new(request));
  
   return Qnil;
@@ -672,7 +772,7 @@ Download_start(VALUE self)
 {
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 188 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 213 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_download_start(_self);
  
   return Qnil;
@@ -683,7 +783,7 @@ Download_cancel(VALUE self)
 {
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 191 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 216 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   webkit_download_cancel(_self);
  
   return Qnil;
@@ -695,7 +795,7 @@ Download_progress(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 194 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 219 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_float_new(webkit_download_get_progress(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -707,7 +807,7 @@ Download_current_size(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 197 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 222 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_ull2inum(webkit_download_get_current_size(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -719,7 +819,7 @@ Download_total_size(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 200 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 225 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_ull2inum(webkit_download_get_total_size(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -731,7 +831,7 @@ Download_uri(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 203 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 228 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_download_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -743,7 +843,7 @@ Download_suggested_filename(VALUE self)
   VALUE __p_retval = Qnil;
   WebKitDownload *_self = ((WebKitDownload*)RVAL2GOBJ(self));
 
-#line 206 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
+#line 231 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
   do { __p_retval =  rb_str_new2(webkit_download_get_suggested_filename(_self)); goto out; } while(0);
 out:
   return __p_retval;
@@ -810,6 +910,14 @@ Init_webkit(void)
   rb_define_method(cWebView, "reload_bypass_cache", WebView_reload_bypass_cache, 0);
   rb_define_method(cWebView, "set_custom_encoding", WebView_set_custom_encoding, 1);
   rb_define_method(cWebView, "stop_loading", WebView_stop_loading, 0);
+  rb_define_method(cWebView, "has_selection?", WebView_has_selection_query, 0);
+  rb_define_method(cWebView, "inspector", WebView_inspector, 0);
+  cWebInspector = G_DEF_CLASS(WEBKIT_TYPE_WEB_INSPECTOR, "WebInspector", mWebKit);
+  rb_define_method(cWebInspector, "inspect_coordinates", WebInspector_inspect_coordinates, 2);
+  rb_define_method(cWebInspector, "uri", WebInspector_uri, 0);
+  rb_define_method(cWebInspector, "show", WebInspector_show, 0);
+  rb_define_method(cWebInspector, "close", WebInspector_close, 0);
+  rb_define_method(cWebInspector, "view", WebInspector_view, 0);
   cWebResource = G_DEF_CLASS(WEBKIT_TYPE_WEB_RESOURCE, "WebResource", mWebKit);
   rb_define_method(cWebResource, "encoding", WebResource_encoding, 0);
   rb_define_method(cWebResource, "frame_name", WebResource_frame_name, 0);

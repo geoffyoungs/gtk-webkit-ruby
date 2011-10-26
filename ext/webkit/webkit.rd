@@ -68,6 +68,22 @@
 
 --- WebKit::WebView#stop_loading
 
+--- WebKit::WebView#has_selection?
+
+--- WebKit::WebView#inspector
+
+== class WebKit::WebInspector
+--- WebKit::WebInspector#inspect_coordinates(double x, double y)
+
+
+--- WebKit::WebInspector#uri
+
+--- WebKit::WebInspector#show
+
+--- WebKit::WebInspector#close
+
+--- WebKit::WebInspector#view
+
 == class WebKit::WebResource
 --- WebKit::WebResource#encoding
 
