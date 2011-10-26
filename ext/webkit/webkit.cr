@@ -124,6 +124,31 @@ module WebKit
 		def stop_loading
 			webkit_web_view_stop_loading(_self);
 		end
+		def bool:has_selection?
+			return webkit_web_view_has_selection(_self);
+		end
+		def WebKitWebInspector*:inspector
+			return webkit_web_view_get_inspector(_self);
+		end
+	end
+
+	gobject WebInspector < WEBKIT_TYPE_WEB_INSPECTOR
+		@type WebKitWebInspector
+		def inspect_coordinates(double x, double y)
+			webkit_web_inspector_inspect_coordinates(_self, x, y);
+		end
+		def strOrNil:uri
+			return webkit_web_inspector_get_inspected_uri(_self);
+		end
+		def show
+			webkit_web_inspector_show(_self);
+		end
+		def close
+			webkit_web_inspector_close(_self);
+		end
+		def WebKitWebView*:view
+			return webkit_web_inspector_get_web_view(_self);
+		end
 	end
 
 	gobject WebResource < WEBKIT_TYPE_WEB_RESOURCE
