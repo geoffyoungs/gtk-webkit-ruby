@@ -10,10 +10,8 @@ convert_string_to_jsval(JSContextRef ctx, char *str) {
 	return js_val_ref;
 }
 
-static char *
-convert_javascript_to_utf8_string(JSContextRef ctx, JSValueRef val, size_t* out_len)
+static char *jsstrref_to_charp(JSStringRef str, size_t *out_len)
 {
-	JSStringRef str = JSValueToStringCopy(ctx, val, NULL);
 	size_t max = 0, len;
 	char *buf;
 
@@ -25,20 +23,46 @@ convert_javascript_to_utf8_string(JSContextRef ctx, JSValueRef val, size_t* out_
 		*out_len = len;
 	}
 
+	return buf;
+}
+
+static char *
+convert_javascript_to_utf8_string(JSContextRef ctx, JSValueRef val, size_t* out_len)
+{
+	JSStringRef str = JSValueToStringCopy(ctx, val, NULL);
+	char *buf;
+
+	buf = jsstrref_to_charp(str, out_len);
+
 	JSStringRelease(str);
 
 	return buf;
 }
 
-static inline VALUE
-convert_javascript_string_to_ruby(JSContextRef ctx, JSValueRef val)
+static ID
+convert_javascript_to_intern(JSStringRef str)
+{
+	ID id;
+	size_t max = 0, len;
+	char *buf;
+
+	max = JSStringGetMaximumUTF8CStringSize(str);
+	buf = malloc(max);
+	len = JSStringGetUTF8CString(str, buf, max);
+	buf[len-1] = 0;
+	id = rb_intern(buf);
+
+	free(buf);
+
+	return id;
+}
+
+static inline VALUE conv_jsstrref_to_value(JSStringRef str)
 {
 	VALUE       output = Qnil;
-	JSStringRef str;
 	size_t      len = 0, max = 0;
 	char 		*buf;
 
-	str = JSValueToStringCopy(ctx, val, NULL);
 	max = JSStringGetMaximumUTF8CStringSize(str);
 	buf = malloc(max);
 	len = JSStringGetUTF8CString(str, buf, max);
@@ -46,6 +70,21 @@ convert_javascript_string_to_ruby(JSContextRef ctx, JSValueRef val)
 	output = rb_str_new(buf, len-1); // Ignore terminator
 
 	free(buf);
+
+	return output;
+
+}
+
+static inline VALUE
+convert_javascript_string_to_ruby(JSContextRef ctx, JSValueRef val)
+{
+	VALUE       output = Qnil;
+	JSStringRef str;
+
+	str = JSValueToStringCopy(ctx, val, NULL);
+
+	output = conv_jsstrref_to_value(str);
+
 	JSStringRelease(str);
 
 	return output;

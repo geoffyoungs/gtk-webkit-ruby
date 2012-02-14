@@ -23,6 +23,9 @@
 --- WebKit::WebFrame#exec_js(String js)
 
 
+--- WebKit::WebFrame#add_ruby_class(String name, Class klass)
+
+
 --- WebKit::WebFrame#add_ruby_eval
 
 --- WebKit::WebFrame#add_js_api(String name, block)

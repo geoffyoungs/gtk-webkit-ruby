@@ -16,9 +16,19 @@ end
 have_func("rb_errinfo")
 PKGConfig.have_package("gtk+-2.0") or exit(-1)
 PKGConfig.have_package("webkit-1.0") or exit(-1)
+have_header("dlfcn.h") or exit(-1)
+have_header("errno.h") or exit(-1)
+have_header("ffi.h") or exit(-1)
+have_header("rbgobject.h") or exit(-1)
+have_header("sys/mman.h") or exit(-1)
+have_header("intern.h") or exit(-1)
 have_header("webkit/webkit.h") or exit(-1)
 have_header("webkit/webkitenumtypes.h") or exit(-1)
 have_header("JavaScriptCore/JavaScript.h") or exit(-1)
+have_library("dl") or exit(-1)
+$LIBS += " -ldl"
+have_library("ffi") or exit(-1)
+$LIBS += " -lffi"
 
 STDOUT.print("checking for new allocation framework... ") # for ruby-1.7
 if Object.respond_to? :allocate

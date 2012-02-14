@@ -32,5 +32,66 @@ class JsTest < Test::Unit::TestCase
 		assert_equal true, @webview.main_frame.exec_js("test_true()")
 		assert_equal false, @webview.main_frame.exec_js("test_false()")
 	end
+
+
+	class Foo
+		class << self
+			attr_reader :objects
+		end
+		@objects = []
+
+		def initialize()
+			@init = true
+			puts "Making a new object..."
+			Foo.objects << self
+		end
+	
+		def do_something
+			puts "Do something!"
+		end
+
+		def toString
+			"#{self.class.name}:#{object_id}"
+		end
+	end
+
+	class Iter
+		def initialize()
+			@num = 0
+		end
+		def nextNumber
+			@num += 1
+		end
+		def value
+			@num
+		end
+	end
+
+
+	def test_class
+		@webview.main_frame.add_ruby_class('Foo', Foo)
+		@webview.main_frame.exec_js <<-EOF
+var s = new Foo();
+console.log(s);
+console.log(s.do_something);
+s.do_something();
+EOF
+		assert_equal 1, Foo.objects.size
+		@webview.main_frame.add_ruby_class('Iter', Iter)
+		assert @webview.main_frame.exec_js(<<-EOF)
+var i = new Iter();
+var j = new Iter();
+
+i.nextNumber()
+i.nextNumber()
+j.nextNumber()
+
+if (j.value() < i.value()) {
+	true;
+} else {
+	false;
+}
+EOF
+	end
 end
 

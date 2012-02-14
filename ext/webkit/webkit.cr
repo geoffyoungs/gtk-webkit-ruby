@@ -2,9 +2,17 @@
 %pkg-config webkit-1.0
 %name webkit
 
+%lib dl
+%lib ffi
+%include dlfcn.h
+%include errno.h
+%include ffi.h
+%include rbgobject.h
+%include sys/mman.h
+%include intern.h
+
 %{
 #include <intern.h>
-
 #include "javascript.h"
 
 static inline VALUE strOrNil(const char *str) {
@@ -65,6 +73,9 @@ module WebKit
 		@type WebKitWebFrame
 		def exec_js(char *js)
 			return javascript_exec(webkit_web_frame_get_global_context(_self), js);
+		end
+		def add_ruby_class(char *name, T_CLASS klass)
+			javascript_add_class(webkit_web_frame_get_global_context(_self), name, klass);
 		end
 		def add_ruby_eval()
 			javascript_add_ruby_eval(webkit_web_frame_get_global_context(_self));
