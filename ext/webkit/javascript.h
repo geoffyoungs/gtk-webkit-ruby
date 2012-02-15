@@ -101,6 +101,13 @@ static void jsrb_class_final(JSObjectRef object) {
 	// Clean up?
 }
 
+/**
+ * Heuristic:
+ *  - return true if obj.respond_to?(property) # i.e. method
+ *  - return true if obj.respond_to?("#{property}=") # ie. setter
+ *  - return true if obj.instance_variables.includj?("@#{property}") # ? maybe ?
+ */
+
 static bool jsrb_has_prop(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName)
 {
 	VALUE robject = JSObjectGetPrivate(object);
@@ -119,6 +126,15 @@ static bool jsrb_has_prop(JSContextRef ctx, JSObjectRef object, JSStringRef prop
 
 	return false;
 }
+
+
+/**
+ * Heuristic:
+ *  - return method(property) if obj.method(property).arity > 0
+ *  - return send(property) if obj.respond_to?("#{property}=") # ie. setter - implemented as property
+ *  - return send(property) if obj.instance_variables.includj?("@#{property}") # ? maybe ?
+ *  - return send(property) if obj.respond_to?(property) # i.e. method
+ */
 
 static JSObjectRef jsrb_get_prop(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef* exception)
 {
