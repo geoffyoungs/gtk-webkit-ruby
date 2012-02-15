@@ -176,6 +176,18 @@ typedef struct {
 	JSValueRef* exception;
 } construct_args;
 
+static JSObjectRef wrapRubyObject(JSContextRef ctx, VALUE value)
+{
+	ruby_js_class_def *def;
+	JSObjectRef object;
+
+	def = jsrb_newClass(value);
+	def->ctx = ctx;
+	rb_iv_set(value, "_js_ref", (VALUE)def);
+	object = JSObjectMake(ctx, def->class_ref, value);
+	return object;
+}
+
 static void jsrb_class_construct_ffi(ffi_cif* cif,
 	void** resp,
 	void** vargs,
@@ -214,6 +226,20 @@ static void jsrb_class_construct_ffi(ffi_cif* cif,
 
 static JSObjectRef jsrb_call_create(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
+	int no_args = 0;
+	VALUE *arg_list = NULL;
+	JSObjectRef object;
+	VALUE value = Qnil;
+
+	VALUE robject = JSObjectGetPrivate(constructor);
+
+	if (RTEST(robject)) {
+		value = rb_class_new_instance(no_args, arg_list, robject);
+		RUBYFUNC_ADD(value);
+		
+		return wrapRubyObject(ctx, value);
+	}
+
 	return NULL;
 }
 
@@ -271,7 +297,8 @@ static ruby_js_class_def *jsrb_newClass(VALUE rObject) {
 
 	if (rb_obj_is_instance_of(rObject, rb_cClass)) {
 		jclass->className     = rb_class2name(rObject);
-		ffi_cif *cif;
+		jclass->callAsConstructor = jsrb_call_create;
+		/*ffi_cif *cif;
 		ffi_closure *closure;
 		void *code;
 		ffi_type **types;
@@ -291,7 +318,7 @@ static ruby_js_class_def *jsrb_newClass(VALUE rObject) {
 			if (ffi_prep_closure_loc(closure, cif, jsrb_class_construct_ffi, (void*)def, code) == FFI_OK) {
 				jclass->callAsConstructor = closure;
 			}
-		}
+		}*/
 	} else {
 		jclass->className     = rb_class2name(rb_obj_class(rObject));
 		jclass->callAsConstructor = NULL;
@@ -312,6 +339,8 @@ static ruby_js_class_def *jsrb_newClass(VALUE rObject) {
 }*/
 
 
+
+
 /**
  * Javascript functions called directly from binding
  **/
@@ -320,7 +349,7 @@ static void javascript_add_class(JSGlobalContextRef ctx, char *name, VALUE rObje
 	JSObjectRef global = JSContextGetGlobalObject(ctx), object;
 
 	// Should we store this on the class?
-	VALUE v = Qfalse;
+/*	VALUE v = Qfalse;
 	ruby_js_class_def *def;
 
 	if (0 && RTEST(v = rb_iv_get(rObject, "_js_ref"))) {
@@ -329,13 +358,13 @@ static void javascript_add_class(JSGlobalContextRef ctx, char *name, VALUE rObje
 		def = jsrb_newClass(rObject);
 		def->ctx = ctx;
 		rb_iv_set(rObject, "_js_ref", (VALUE)def);
-	}
+	}*/
 
 	/*fprintf(stderr, "Klass is %p, Def is %p, ctx is %p\n", rObject, def, ctx);
 	fflush(stderr);*/
-	object = JSObjectMake(ctx, def->class_ref, NULL);
+/*	object = JSObjectMake(ctx, def->class_ref, NULL);*/
 
-	js_obj_set_value(ctx, global, name, object); // Check failure?
+	js_obj_set_value(ctx, global, name, wrapRubyObject(ctx, rObject)); // Check failure?
 }
 static void *
 javascript_add_ruby_fn(JSGlobalContextRef ctx, char *name, VALUE ruby_fn)
