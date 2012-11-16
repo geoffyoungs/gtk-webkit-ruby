@@ -3,19 +3,27 @@ Gtk Webkit Ruby
 
 Requires
 --------
-* rubber-generate >= 0.0.12
+* rubber-generate >= 0.0.17
+* rake-compiler, rake to build
 * ruby-gnome2 (including development files)
 * webkit (including development files)
+
+Changes
+-------
+* 0.0.4 - 16 Nov 2012
+ * Use rubygems to find Ruby-GNOME2 installation (fixes #2, missing rbglib.h header file)
+ * Wrap stored JS ref pointer with Data_Wrap_Struct (fixes GC bug)
 
 Description
 -----------
 
 Gtk Webkit bindings for ruby.  Partial coverage sufficient to embed a webview in a ruby-gnome2 application.
 
-Also initial/experimental support for allowing ruby code to be called by javascript & executing javascript from ruby.
+Also experimental support for allowing ruby code to be called by javascript & executing javascript from ruby.
 
 e.g
 
+````ruby
 	require 'gtk2'
 	require 'webkit'
 	require 'digest/md5'
@@ -30,4 +38,5 @@ e.g
 	puts v.main_frame.exec_js("ruby_eval('RUBY_DESCRIPTION')")
 	puts v.main_frame.exec_js("md5('foo')")
 	puts Digest::MD5.hexdigest('foo')
+````
 
