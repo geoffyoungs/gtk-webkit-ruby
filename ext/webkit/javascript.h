@@ -231,16 +231,25 @@ static void jsrb_class_construct_ffi(ffi_cif* cif,
 
 static JSObjectRef jsrb_call_create(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
-	int no_args = 0;
-	VALUE *arg_list = NULL;
+	int no_args = 0, i;
+	volatile VALUE *arg_list = NULL;
 	JSObjectRef object;
 	VALUE value = Qnil;
 
 	VALUE robject = JSObjectGetPrivate(constructor);
 
 	if (RTEST(robject)) {
+    arg_list = ALLOC_N(VALUE, argumentCount);
+
+    for(i = 0; i < argumentCount; i++) {
+      no_args += 1;
+      arg_list[i] = convert_javascript_to_ruby(ctx, arguments[i]);
+    }
+
 		value = rb_class_new_instance(no_args, arg_list, robject);
 		RUBYFUNC_ADD(value);
+
+    xfree(arg_list);
 		
 		return wrapRubyObject(ctx, value);
 	}

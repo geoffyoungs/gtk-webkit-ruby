@@ -81,6 +81,7 @@ s.do_something();
 EOF
 		assert_equal 1, Foo.objects.size
 		@webview.main_frame.add_ruby_class('Iter', Iter)
+		@webview.main_frame.add_ruby_class('File', ::File)
 
     js_id = false
 		@webview.main_frame.add_js_api('id_is') { |a| js_id = a }
@@ -88,6 +89,10 @@ EOF
 		assert @webview.main_frame.exec_js(<<-EOF)
 var i = new Iter();
 var j = new Iter();
+
+var fp = new File("Rakefile", "r");
+var data = fp.read();
+fp.close();
 
 i.nextNumber()
 i.nextNumber()
@@ -110,6 +115,11 @@ EOF
     GC.start
     # Check GC doesn't crash out
     assert true
+
+    @mainview = nil
+
+    GC.start
+    ObjectSpace.each_object(Iter) { |iter| p [:found, iter, iter.id] }
   end
 end
 
