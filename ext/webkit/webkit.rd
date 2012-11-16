@@ -8,6 +8,7 @@
 --- WebKit.set_default_web_database_quota(guint64 quota)
 
 
+== class WebKit::JsPtr
 == class WebKit::JavascriptError < StandardError
 == class WebKit::WebSettings
 --- WebKit::WebSettings.new
@@ -23,7 +24,7 @@
 --- WebKit::WebFrame#exec_js(String js)
 
 
---- WebKit::WebFrame#add_ruby_class(String name, Class klass)
+--- WebKit::WebFrame#add_ruby_class(String name, Class or Module klass)
 
 
 --- WebKit::WebFrame#add_ruby_eval

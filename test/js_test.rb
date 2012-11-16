@@ -59,6 +59,9 @@ class JsTest < Test::Unit::TestCase
 		def initialize()
 			@num = 0
 		end
+    def id
+      object_id
+    end
 		def nextNumber
 			@num += 1
 		end
@@ -72,12 +75,16 @@ class JsTest < Test::Unit::TestCase
 		@webview.main_frame.add_ruby_class('Foo', Foo)
 		@webview.main_frame.exec_js <<-EOF
 var s = new Foo();
-console.log(s);
-console.log(s.do_something);
+//console.log(s);
+//console.log(s.do_something);
 s.do_something();
 EOF
 		assert_equal 1, Foo.objects.size
 		@webview.main_frame.add_ruby_class('Iter', Iter)
+
+    js_id = false
+		@webview.main_frame.add_js_api('id_is') { |a| js_id = a }
+
 		assert @webview.main_frame.exec_js(<<-EOF)
 var i = new Iter();
 var j = new Iter();
@@ -86,12 +93,23 @@ i.nextNumber()
 i.nextNumber()
 j.nextNumber()
 
+id_is(i.id())
+
 if (j.value() < i.value()) {
 	true;
 } else {
 	false;
 }
 EOF
-	end
+
+    ids = []
+    ObjectSpace.each_object(Iter) { |iter| ids << iter.id }
+    assert ids.include?(js_id)
+
+    GC.enable
+    GC.start
+    # Check GC doesn't crash out
+    assert true
+  end
 end
 

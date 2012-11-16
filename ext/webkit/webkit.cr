@@ -36,6 +36,9 @@ static inline VALUE strOrNil(const char *str) {
 module WebKit
 	gcpool RubyFunc
 
+  class JsPtr
+  end
+
 	class JavascriptError < StandardError
 	end
 
@@ -74,7 +77,7 @@ module WebKit
 		def exec_js(char *js)
 			return javascript_exec(webkit_web_frame_get_global_context(_self), js);
 		end
-		def add_ruby_class(char *name, T_CLASS klass)
+		def add_ruby_class(char *name, T_CLASS|T_MODULE klass)
 			javascript_add_class(webkit_web_frame_get_global_context(_self), name, klass);
 		end
 		def add_ruby_eval()
