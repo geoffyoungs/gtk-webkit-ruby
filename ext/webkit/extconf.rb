@@ -1,8 +1,12 @@
 require 'mkmf'
-
+use_gems = false
 begin
   require 'mkmf-gnome2'
 rescue LoadError
+  use_gems = true
+end
+
+if use_gems or Object.const_defined?('Gem')
   require 'rubygems'
   gem 'glib2'
   require 'mkmf-gnome2'
@@ -11,6 +15,14 @@ rescue LoadError
 		$CFLAGS += " '-I#{File.dirname(f)}'"
 	end
   end
+end
+  %w[
+ glib2 gdk_pixbuf2 atk gtk2].each do |package|
+  require package
+  $CFLAGS += " -I"+Gem.loaded_specs[package].full_gem_path+"/ext/"+package
+end
+if RbConfig::CONFIG.has_key?('rubyhdrdir')
+$CFLAGS += " -I" + RbConfig::CONFIG['rubyhdrdir']+'/ruby'
 end
 
 have_func("rb_errinfo")
