@@ -113,6 +113,8 @@ convert_javascript_to_ruby(JSContextRef ctx, JSValueRef val)
     case kJSTypeObject:
       output = convert_javascript_string_to_ruby(ctx, val);
       break;
+    default:
+      break;
   }
 
   return output;

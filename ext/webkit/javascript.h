@@ -1,10 +1,15 @@
 #include <alloca.h>
 #include "javascript-type-convert.h"
 
+#ifndef STRINGIZE
 #define STRINGIZE(s) #s
+#endif
 
 #define JS_fn(f) _JS_fn(ctx, STRINGIZE(f), f)
-
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
 
 typedef struct {
 	JSClassDefinition definition;
@@ -95,7 +100,7 @@ static void jsrb_class_init(JSContextRef ctx, JSObjectRef object)
 
 static void jsrb_class_final(JSObjectRef object) {
 	// Clean up?
-	VALUE robject = JSObjectGetPrivate(object);
+	VALUE robject = (VALUE)JSObjectGetPrivate(object);
 	if (RTEST(robject)) {
 		ruby_js_class_def *def = (ruby_js_class_def*)DATA_PTR(rb_iv_get(robject, "_js_ref"));
 		rb_iv_set(robject, "_js_ref", Qnil);
@@ -113,7 +118,7 @@ static void jsrb_class_final(JSObjectRef object) {
 
 static bool jsrb_has_prop(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName)
 {
-	VALUE robject = JSObjectGetPrivate(object);
+	VALUE robject = (VALUE)JSObjectGetPrivate(object);
 
 	if (RTEST(robject)) {
 		ID prop = convert_javascript_to_intern(propertyName);
@@ -168,8 +173,8 @@ static void jsrb_get_prop_names(JSContextRef ctx, JSObjectRef object, JSProperty
 static JSValueRef jsrb_call_fn(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
 	// 
-	VALUE robject = JSObjectGetPrivate(function);
-	VALUE self    = JSObjectGetPrivate(thisObject);
+	VALUE robject = (VALUE)JSObjectGetPrivate(function);
+	VALUE self    = (VALUE)JSObjectGetPrivate(thisObject);
 	if (RTEST(robject)) {
 		VALUE rbo = rb_funcall2(robject, rb_intern("call"), 0, NULL);
 		JSValueRef retval = convert_ruby_to_javascript(ctx, rbo);
@@ -194,7 +199,7 @@ static JSObjectRef wrapRubyObject(JSContextRef ctx, VALUE value)
 	def = jsrb_newClass(value);
 	def->ctx = ctx;
 	rb_iv_set(value, "_js_ref", Data_Wrap_Struct(cJsPtr, NULL, NULL, def));
-	object = JSObjectMake(ctx, def->class_ref, value);
+	object = JSObjectMake(ctx, def->class_ref, (void*)value);
 	return object;
 }
 
@@ -405,7 +410,7 @@ javascript_add_ruby_eval(JSGlobalContextRef ctx)
 {
 	JSObjectRef global = JSContextGetGlobalObject(ctx);
 
-	js_obj_set_value(ctx, global, "ruby_eval", JS_fn(js_call_ruby_eval));
+	js_obj_set_value(ctx, global, (char*)"ruby_eval", JS_fn(js_call_ruby_eval));
 
 	return NULL;
 }
@@ -440,7 +445,7 @@ javascript_exec(JSGlobalContextRef ctx, char *script)
 		len = JSStringGetUTF8CString(str, buf, max);
 
 		JSStringRelease(str);
-		rb_raise(cJavascriptError, buf);
+		rb_raise(cJavascriptError, "%s", buf);
 		//free(buf); // Will this ever be called?
 	}
 
