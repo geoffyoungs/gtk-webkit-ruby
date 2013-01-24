@@ -5,6 +5,9 @@ BASE_DIR = Dir.pwd
 require 'rubygems/package_task'
 require 'rake/testtask'
 
+$: << './lib'
+
+require 'webkit/version'
 exts = []
 
 namespace :prepare do
@@ -22,13 +25,13 @@ spec = Gem::Specification.new do |s|
 	s.name = "gtk-webkit-ruby"
 	s.author = "Geoff Youngs"
 	s.email = "git@intersect-uk.co.uk"
-	s.version = "0.0.4"
+	s.version = WebKit::BINDINGS_VERSION
 	s.homepage = "http://github.com/geoffyoungs/gtk-webkit-ruby"
 	s.summary = "Webkit bindings using rubber-generate"
 	s.add_dependency("rubber-generate", ">= 0.0.17")
 	s.platform = Gem::Platform::RUBY
 	s.extensions = FileList["ext/*/extconf.rb"]
-	s.files = FileList['ext/*/*.{c,h,cr,rd}'] + ['Rakefile', 'README.md']
+	s.files = FileList['ext/*/*.{c,h,cr,rd}'] + ['Rakefile', 'README.md'] + FileList['lib/**/*.rb']
 s.description = <<-EOF
 Gtk Webkit bindings for ruby.  Partial coverage sufficient to embed a webview in a Ruby-GNOME2 application.
 

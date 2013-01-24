@@ -13,6 +13,7 @@
 
 %{
 #include <intern.h>
+#include <ruby.h>
 #include "javascript.h"
 
 static inline VALUE strOrNil(const char *str) {

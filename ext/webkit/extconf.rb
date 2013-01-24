@@ -16,15 +16,19 @@ if use_gems or Object.const_defined?('Gem')
 	end
   end
 end
+# Look for headers in {gem_root}/ext/{package}
+if use_gems
   %w[
- glib2 gdk_pixbuf2 atk gtk2].each do |package|
-  require package
-  $CFLAGS += " -I"+Gem.loaded_specs[package].full_gem_path+"/ext/"+package
+ glib2 gdk_pixbuf2 atk gtk2    ].each do |package|
+      require package
+      $CFLAGS += " -I"+Gem.loaded_specs[package].full_gem_path+"/ext/"+package
+  end
 end
 if RbConfig::CONFIG.has_key?('rubyhdrdir')
 $CFLAGS += " -I" + RbConfig::CONFIG['rubyhdrdir']+'/ruby'
 end
 
+$CFLAGS += " -I."
 have_func("rb_errinfo")
 PKGConfig.have_package("gtk+-2.0") or exit(-1)
 PKGConfig.have_package("webkit-1.0") or exit(-1)
