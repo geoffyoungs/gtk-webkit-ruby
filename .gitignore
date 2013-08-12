@@ -1,1 +1,6 @@
 .*.swp
+pkg/*
+tmp/*
+*.log
+Makefile
+*.so

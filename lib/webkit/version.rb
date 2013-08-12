@@ -1,3 +1,3 @@
 module WebKit
-  BINDINGS_VERSION = "0.0.7"
+  BINDINGS_VERSION = "0.0.8"
 end
