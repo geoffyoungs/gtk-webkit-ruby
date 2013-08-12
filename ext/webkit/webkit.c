@@ -466,7 +466,7 @@ WebView_title(VALUE self)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
 #line 124 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  do { __p_retval =  rb_str_new2(webkit_web_view_get_title(_self)); goto out; } while(0);
+  do { __p_retval = strOrNil(webkit_web_view_get_title(_self)); goto out; } while(0);
 out:
   return __p_retval;
 }
@@ -478,7 +478,7 @@ WebView_uri(VALUE self)
   WebKitWebView *_self = ((WebKitWebView*)RVAL2GOBJ(self));
 
 #line 127 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  do { __p_retval =  rb_str_new2(webkit_web_view_get_uri(_self)); goto out; } while(0);
+  do { __p_retval = strOrNil(webkit_web_view_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
 }
@@ -657,7 +657,7 @@ WebResource_uri(VALUE self)
   WebKitWebResource *_self = ((WebKitWebResource*)RVAL2GOBJ(self));
 
 #line 180 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  do { __p_retval = strOrNil(webkit_web_resource_get_mime_type(_self)); goto out; } while(0);
+  do { __p_retval = strOrNil(webkit_web_resource_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
 }
@@ -712,7 +712,7 @@ WebNetworkRequest_uri(VALUE self)
   WebKitNetworkRequest *_self = ((WebKitNetworkRequest*)RVAL2GOBJ(self));
 
 #line 199 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  do { __p_retval =  rb_str_new2(webkit_network_request_get_uri(_self)); goto out; } while(0);
+  do { __p_retval = strOrNil(webkit_network_request_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
 }
@@ -749,7 +749,7 @@ WebNetworkResponse_uri(VALUE self)
   WebKitNetworkResponse *_self = ((WebKitNetworkResponse*)RVAL2GOBJ(self));
 
 #line 212 "/home/geoff/Projects/gtk-webkit-ruby/ext/webkit/webkit.cr"
-  do { __p_retval =  rb_str_new2(webkit_network_response_get_uri(_self)); goto out; } while(0);
+  do { __p_retval = strOrNil(webkit_network_response_get_uri(_self)); goto out; } while(0);
 out:
   return __p_retval;
 }

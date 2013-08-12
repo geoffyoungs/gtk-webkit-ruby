@@ -121,10 +121,10 @@ module WebKit
 		def double:progress
 			return webkit_web_view_get_progress(_self);
 		end
-		def char*:title
+		def strOrNil:title
 			return webkit_web_view_get_title(_self);
 		end
-		def char*:uri
+		def strOrNil:uri
 			return webkit_web_view_get_uri(_self);
 		end
 		def reload
@@ -178,7 +178,7 @@ module WebKit
 			return webkit_web_resource_get_mime_type(_self);
 		end
 		def strOrNil:uri
-			return webkit_web_resource_get_mime_type(_self);
+			return webkit_web_resource_get_uri(_self);
 		end
 		def data
 			GString *data = webkit_web_resource_get_data(_self);
@@ -196,7 +196,7 @@ module WebKit
 
 	gobject WebNetworkRequest < WEBKIT_TYPE_NETWORK_REQUEST
 		@type WebKitNetworkRequest
-		def char*:uri
+		def strOrNil:uri
 			return webkit_network_request_get_uri(_self);
 		end
 		def uri=(char *uri)
@@ -209,7 +209,7 @@ module WebKit
 
 	gobject WebNetworkResponse < WEBKIT_TYPE_NETWORK_RESPONSE
 		@type WebKitNetworkResponse
-		def char*:uri
+		def strOrNil:uri
 			return webkit_network_response_get_uri(_self);
 		end
 		def uri=(char *uri)
